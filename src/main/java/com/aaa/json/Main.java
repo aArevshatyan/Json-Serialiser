@@ -22,52 +22,53 @@ public class Main {
     private static String serialize(Object o) throws IllegalAccessException {
 
         tabulation += "\t";
-        String result = "{";
+        StringBuilder jsonString = new StringBuilder();
+        jsonString.append("{");
         Field[] declaredFields = o.getClass().getDeclaredFields();
         for (int index = 0; index < declaredFields.length; index++) {
-            Field i = declaredFields[index];
-            i.setAccessible(true);
+            Field field = declaredFields[index];
+            field.setAccessible(true);
 
-            if (!i.isAnnotationPresent(Transient.class)) {
+            if (!field.isAnnotationPresent(Transient.class)) {
 
 
-                result += "\n" + tabulation + "\"" + i.getName() + "\" : ";
-                if (i.getType().isPrimitive()) {
-                    result += i.get(o);
+                jsonString.append("\n").append(tabulation).append("\"").append(field.getName()).append("\" : ");
+                if (field.getType().isPrimitive()) {
+                    jsonString.append(field.get(o));
 
-                } else if (i.getType().getName().equals("java.lang.String")) {
-                    result += "\"" + i.get(o) + "\"";
-                } else if (Collection.class.isAssignableFrom(i.getType())) {
+                } else if (field.getType().getName().equals("java.lang.String")) {
+                    jsonString.append("\"").append(field.get(o)).append("\"");
+                } else if (Collection.class.isAssignableFrom(field.getType())) {
                     tabulation += "\t";
-                    result += "[\n" + tabulation;
-                    Collection collection = (Collection) i.get(o);
+                    jsonString.append("[\n").append(tabulation);
+                    Collection collection = (Collection) field.get(o);
                     Iterator iterator = collection.iterator();
                     while (iterator.hasNext()) {
-                        result += serialize(iterator.next());
+                        jsonString.append(serialize(iterator.next()));
                         if (iterator.hasNext()) {
-                            result += ",\n" + tabulation;
+                            jsonString.append(",\n").append(tabulation);
                         } else {
-                            result += "\n";
+                            jsonString.append("\n");
                         }
                     }
                     tabulation = tabulation.replaceFirst("\t", "");
-                    result += tabulation + "]";
+                    jsonString.append(tabulation).append("]");
 
                 } else {
-                    result += serialize(i.get(o));
+                    jsonString.append(serialize(field.get(o)));
                 }
 
                 if (index != declaredFields.length - 1) {
-                    result += ",";
+                    jsonString.append(",");
                 }
             }
 
 
-            i.setAccessible(false);
+            field.setAccessible(false);
         }
         tabulation = tabulation.replaceFirst("\t", "");
-        result += "\n" + tabulation + "}";
-        return result;
+        jsonString.append("\n").append(tabulation).append("}");
+        return jsonString.toString();
 
     }
 
